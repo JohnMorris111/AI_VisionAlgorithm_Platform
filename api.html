@@ -203,54 +203,62 @@
     <!-- Python 接入 -->
     <div id="tab-python" class="tab-content active">
         <h3>安装依赖</h3>
-        <pre><code>pip install websockets</code></pre>
+        <pre><code>pip install websockets opencv-python numpy</code></pre>
 
         <h3>完整示例</h3>
         <pre><code>import asyncio
 import websockets
 import json
+import cv2
+import numpy as np
 
 async def main():
     uri = "ws://127.0.0.1:8000/ws_roi"
     
     async with websockets.connect(uri) as ws:
-        # 启动检测
+        # 1. 停止之前的流 (可选，后端会自动处理，但显式调用更安全)
+        await ws.send(json.dumps({"type": "stop"}))
+        
+        # 2. 启动检测
         await ws.send(json.dumps({
             "type": "start",
-            "source": "rtsp://your-camera/stream"
+            "source": "rtsp://your-camera/stream" # 或本地文件路径
         }))
         
-        # 接收结果
+        # 3. 接收 loop
         while True:
-            msg = await ws.recv()
+            try:
+                msg = await ws.recv()
+            except websockets.exceptions.ConnectionClosed:
+                break
             
             # 二进制消息 = 视频帧 (JPEG)
             if isinstance(msg, bytes):
-                # 保存或处理 JPEG 图片
-                with open("frame.jpg", "wb") as f:
-                    f.write(msg)
-                print("收到视频帧")
+                frame = cv2.imdecode(np.frombuffer(msg, np.uint8), cv2.IMREAD_COLOR)
+                if frame is not None:
+                    cv2.imshow("Preview", frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'): break
                 continue
             
             # JSON 消息
-            data = json.loads(msg)
+            try:
+                data = json.loads(msg)
+            except json.JSONDecodeError:
+                continue
             
-            if data["type"] == "payload":
-                tracks = data["payload"]["tracks"]
-                for track_id, info in tracks.items():
-                    print(f"车辆 {track_id}: {info['status']}")
-            
-            elif data["type"] == "frame":
-                # 下一条消息将是二进制视频帧
-                print(f"视频帧时间戳: {data['ts']}")
-            
-            elif data["type"] == "error":
-                print(f"错误: {data['error']}")
+            if data.get("type") == "payload":
+                # 处理检测结果
+                print(f"Frame {data['payload']['frame_index']}: {len(data['payload']['tracks'])} objects")
+                
+            elif data.get("type") == "error":
+                print(f"Error: {data.get('message') or data.get('error')}")
                 break
-            
-            elif data["type"] == "stopped":
-                print("检测已停止")
+                
+            elif data.get("type") == "stop":
+                print("Stopped")
                 break
+
+    cv2.destroyAllWindows()
 
 asyncio.run(main())</code></pre>
     </div>
@@ -262,54 +270,33 @@ asyncio.run(main())</code></pre>
 
         <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html&gt;
-&lt;head&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;title&gt;AI违停检测 - 最小示例&lt;/title&gt;
-&lt;/head&gt;
 &lt;body&gt;
   &lt;h1&gt;AI违停检测&lt;/h1&gt;
-  &lt;p&gt;按 F12 打开控制台查看检测结果&lt;/p&gt;
-  &lt;button id="start"&gt;启动&lt;/button&gt;
-  &lt;button id="stop"&gt;停止&lt;/button&gt;
-  &lt;br&gt;&lt;br&gt;
   &lt;img id="video" style="max-width:640px;"&gt;
+  &lt;div&gt;
+      &lt;button id="start"&gt;Start&lt;/button&gt;
+      &lt;button id="stop"&gt;Stop&lt;/button&gt;
+  &lt;/div&gt;
 
   &lt;script&gt;
     const ws = new WebSocket('ws://127.0.0.1:8000/ws_roi');
     const img = document.getElementById('video');
     
-    ws.onopen = () =&gt; console.log('✅ 已连接');
-    
-    ws.onmessage = async (e) =&gt; {
-      // 二进制消息 = 视频帧 (JPEG)
+    ws.onmessage = (e) =&gt; {
+      // 1. 处理二进制视频帧 (Blob)
       if (e.data instanceof Blob) {
         img.src = URL.createObjectURL(e.data);
-        return;
-      }
-      
-      // JSON 消息
-      const data = JSON.parse(e.data);
-      
-      if (data.type === 'payload') {
-        const tracks = data.payload.tracks;
-        for (const [id, info] of Object.entries(tracks)) {
-          console.log(`🚗 车辆 ${id}: ${info.status}`);
-        }
-      } else if (data.type === 'frame') {
-        console.log(`📹 视频帧时间戳: ${data.ts}`);
-      } else if (data.type === 'error') {
-        console.error('❌ 错误:', data.error);
-      } else if (data.type === 'stopped') {
-        console.log('⏹️ 检测已停止');
+      } else {
+        // 2. 处理 JSON 数据消息
+        const data = JSON.parse(e.data);
+        if (data.type === 'payload') console.log('检测结果:', data.payload);
+        else if (data.type === 'error') console.error('错误:', data.message);
       }
     };
     
     document.getElementById('start').onclick = () =&gt; {
-      ws.send(JSON.stringify({
-        type: 'start',
-        source: 'rtsp://your-camera/stream'  // 修改为实际地址
-      }));
-      console.log('▶️ 已发送启动命令');
+      // 发送启动指令 (支持 RTSP 或 文件路径)
+      ws.send(JSON.stringify({ type: 'start', source: 'rtsp://...' }));
     };
     
     document.getElementById('stop').onclick = () =&gt; {
@@ -318,7 +305,6 @@ asyncio.run(main())</code></pre>
   &lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
-
         <div class="tip">
             💡 <strong>提示：</strong> 如需带 UI 渲染的完整示例，请查看 <a href="demo_minimal.html">在线演示</a>
         </div>
