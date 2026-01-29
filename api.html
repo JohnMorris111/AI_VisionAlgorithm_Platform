@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API接口文档 - AI违停检测</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+            margin-top: 32px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #d1d9e0;
+            margin: 24px 0 0 0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #656d76;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn.active {
+            color: #0969da;
+            border-bottom-color: #fd8c73;
+        }
+
+        .tab-btn:hover {
+            color: #0969da;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 24px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        pre {
+            background: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        code {
+            background: rgba(175, 184, 193, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 85%;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        .tip {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            background: #ddf4ff;
+            border-left: 4px solid #0969da;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <div class="breadcrumb">
+        <a href="index.html">平台首页</a> / <a href="parking.html">AI违停检测</a> / API文档
+    </div>
+
+    <h1>📖 API 接口文档</h1>
+    <p>WebSocket 实时通信接口，支持 Python 后端和前端 JavaScript 两种接入方式。</p>
+
+    <h2>🔌 接口地址</h2>
+    <pre><code>ws://服务器IP:8000/ws_roi</code></pre>
+
+    <h2>📨 消息格式</h2>
+
+    <table>
+        <tr>
+            <th>方向</th>
+            <th>消息类型</th>
+            <th>格式</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>start</code></td>
+            <td>JSON</td>
+            <td>启动检测</td>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>stop</code></td>
+            <td>JSON</td>
+            <td>停止检测</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>payload</code></td>
+            <td>JSON</td>
+            <td>检测结果数据</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>frame</code></td>
+            <td>JSON + 二进制</td>
+            <td>带标注的视频帧（JPEG）</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>error</code></td>
+            <td>JSON</td>
+            <td>错误信息</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>stopped</code></td>
+            <td>JSON</td>
+            <td>已停止</td>
+        </tr>
+    </table>
+
+    <div class="tip">
+        📹 <strong>视频帧说明：</strong> <code>frame</code> 消息后紧跟一条<strong>二进制消息</strong>，内容为 JPEG 格式的标注帧图片。
+    </div>
+
+    <h2>🚀 接入示例</h2>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('python')">🐍 Python 接入</button>
+        <button class="tab-btn" onclick="switchTab('frontend')">🌐 前端接入</button>
+    </div>
+
+    <!-- Python 接入 -->
+    <div id="tab-python" class="tab-content active">
+        <h3>安装依赖</h3>
+        <pre><code>pip install websockets</code></pre>
+
+        <h3>完整示例</h3>
+        <pre><code>import asyncio
+import websockets
+import json
+
+async def main():
+    uri = "ws://127.0.0.1:8000/ws_roi"
+    
+    async with websockets.connect(uri) as ws:
+        # 启动检测
+        await ws.send(json.dumps({
+            "type": "start",
+            "source": "rtsp://your-camera/stream"
+        }))
+        
+        # 接收结果
+        while True:
+            msg = await ws.recv()
+            
+            # 二进制消息 = 视频帧 (JPEG)
+            if isinstance(msg, bytes):
+                # 保存或处理 JPEG 图片
+                with open("frame.jpg", "wb") as f:
+                    f.write(msg)
+                print("收到视频帧")
+                continue
+            
+            # JSON 消息
+            data = json.loads(msg)
+            
+            if data["type"] == "payload":
+                tracks = data["payload"]["tracks"]
+                for track_id, info in tracks.items():
+                    print(f"车辆 {track_id}: {info['status']}")
+            
+            elif data["type"] == "frame":
+                # 下一条消息将是二进制视频帧
+                print(f"视频帧时间戳: {data['ts']}")
+            
+            elif data["type"] == "error":
+                print(f"错误: {data['error']}")
+                break
+            
+            elif data["type"] == "stopped":
+                print("检测已停止")
+                break
+
+asyncio.run(main())</code></pre>
+    </div>
+
+    <!-- 前端接入 -->
+    <div id="tab-frontend" class="tab-content">
+        <h3>最小示例（无渲染）</h3>
+        <p>复制以下代码保存为 HTML 文件即可运行，打开浏览器控制台查看输出：</p>
+
+        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;AI违停检测 - 最小示例&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;AI违停检测&lt;/h1&gt;
+  &lt;p&gt;按 F12 打开控制台查看检测结果&lt;/p&gt;
+  &lt;button id="start"&gt;启动&lt;/button&gt;
+  &lt;button id="stop"&gt;停止&lt;/button&gt;
+  &lt;br&gt;&lt;br&gt;
+  &lt;img id="video" style="max-width:640px;"&gt;
+
+  &lt;script&gt;
+    const ws = new WebSocket('ws://127.0.0.1:8000/ws_roi');
+    const img = document.getElementById('video');
+    
+    ws.onopen = () =&gt; console.log('✅ 已连接');
+    
+    ws.onmessage = async (e) =&gt; {
+      // 二进制消息 = 视频帧 (JPEG)
+      if (e.data instanceof Blob) {
+        img.src = URL.createObjectURL(e.data);
+        return;
+      }
+      
+      // JSON 消息
+      const data = JSON.parse(e.data);
+      
+      if (data.type === 'payload') {
+        const tracks = data.payload.tracks;
+        for (const [id, info] of Object.entries(tracks)) {
+          console.log(`🚗 车辆 ${id}: ${info.status}`);
+        }
+      } else if (data.type === 'frame') {
+        console.log(`📹 视频帧时间戳: ${data.ts}`);
+      } else if (data.type === 'error') {
+        console.error('❌ 错误:', data.error);
+      } else if (data.type === 'stopped') {
+        console.log('⏹️ 检测已停止');
+      }
+    };
+    
+    document.getElementById('start').onclick = () =&gt; {
+      ws.send(JSON.stringify({
+        type: 'start',
+        source: 'rtsp://your-camera/stream'  // 修改为实际地址
+      }));
+      console.log('▶️ 已发送启动命令');
+    };
+    
+    document.getElementById('stop').onclick = () =&gt; {
+      ws.send(JSON.stringify({ type: 'stop' }));
+    };
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <div class="tip">
+            💡 <strong>提示：</strong> 如需带 UI 渲染的完整示例，请查看 <a href="demo_minimal.html">在线演示</a>
+        </div>
+    </div>
+
+    <h2>📤 发送消息</h2>
+
+    <h3>启动检测</h3>
+    <pre><code>{
+  "type": "start",
+  "source": "rtsp://user:pass@192.168.1.100:554/stream"
+}</code></pre>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>必填</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>type</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>固定值 <code>"start"</code></td>
+        </tr>
+        <tr>
+            <td><code>source</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>视频源地址（RTSP/HTTP/本地路径）</td>
+        </tr>
+    </table>
+
+    <h3>停止检测</h3>
+    <pre><code>{"type": "stop"}</code></pre>
+
+    <h2>📥 接收消息</h2>
+
+    <h3>检测结果</h3>
+    <pre><code>{
+  "type": "payload",
+  "payload": {
+    "frame_index": 1234,
+    "tracks": {
+      "1": {
+        "track_id": 1,
+        "class_name": "小汽车",
+        "bbox": [100, 200, 300, 400],
+        "status": "违规停车"
+      }
+    }
+  }
+}</code></pre>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>frame_index</code></td>
+            <td>当前帧序号</td>
+        </tr>
+        <tr>
+            <td><code>tracks</code></td>
+            <td>车辆追踪信息（key 为车辆ID）</td>
+        </tr>
+        <tr>
+            <td><code>track_id</code></td>
+            <td>车辆追踪ID</td>
+        </tr>
+        <tr>
+            <td><code>class_name</code></td>
+            <td>车辆类型（小汽车/面包车/卡车）</td>
+        </tr>
+        <tr>
+            <td><code>bbox</code></td>
+            <td>边界框 [x1, y1, x2, y2]</td>
+        </tr>
+        <tr>
+            <td><code>status</code></td>
+            <td>状态（移动/停车/合法停车/违规停车）</td>
+        </tr>
+    </table>
+
+    <h2>📊 AI 视觉分析</h2>
+
+    <p>当检测到违规停车事件后，系统自动生成完整的证据报告，保存在 <code>result/</code> 目录：</p>
+
+    <pre><code>result/
+└── 20260126_005935_punish_id880/
+    ├── id880_frame107_full.jpg      # 全景截图
+    ├── id880_frame107_crop.jpg      # 目标裁剪图
+    ├── id880_frame107_annotated.jpg # 带标注截图
+    ├── id880_frame107.csv           # 结构化数据
+    ├── report.html                  # 可视化报告
+    └── summary.json                 # AI 分析摘要</code></pre>
+
+    <h3>summary.json 格式</h3>
+    <pre><code>{
+  "verdict": "REVIEW",           // 判定: ILLEGAL(违规) / LEGAL(合法) / REVIEW(待复核)
+  "confidence": 0.85,            // 置信度 0-1
+  "car_id": 880,                 // 车辆追踪ID
+  "parked_frames": 45,           // 停车帧数
+  "evidence_level": "HIGH",      // 证据等级: HIGH/MEDIUM/LOW
+  "summary": "车辆停于道路右侧...", // AI 分析总结
+  "evidence": {                  // 证据图片分析
+    "img1": ["分析描述1", "分析描述2"],
+    "img2": ["分析描述1"]
+  },
+  "missing_evidence": [...],     // 缺失证据
+  "next_actions": [...]          // 建议后续操作
+}</code></pre>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>verdict</code></td>
+            <td>判定结论（ILLEGAL/LEGAL/REVIEW）</td>
+        </tr>
+        <tr>
+            <td><code>confidence</code></td>
+            <td>置信度评分 0-1</td>
+        </tr>
+        <tr>
+            <td><code>summary</code></td>
+            <td>AI 生成的文字总结说明</td>
+        </tr>
+        <tr>
+            <td><code>evidence</code></td>
+            <td>对各截图的逐条分析</td>
+        </tr>
+        <tr>
+            <td><code>missing_evidence</code></td>
+            <td>缺失的关键证据</td>
+        </tr>
+        <tr>
+            <td><code>next_actions</code></td>
+            <td>建议的后续操作</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p><a href="parking.html">← 返回产品页</a></p>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>

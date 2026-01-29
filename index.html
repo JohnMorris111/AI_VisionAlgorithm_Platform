@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>低空AI视觉算法平台</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .algo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .algo-card {
+            border: 1px solid #d1d9e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+        }
+
+        .algo-card:hover {
+            border-color: #0969da;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .algo-card h3 {
+            margin: 0 0 8px 0;
+        }
+
+        .algo-card p {
+            margin: 0;
+            color: #656d76;
+            font-size: 14px;
+        }
+
+        .algo-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .algo-card .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
+        .status-ready {
+            background: #dafbe1;
+            color: #1a7f37;
+        }
+
+        .status-soon {
+            background: #ddf4ff;
+            color: #0969da;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <h1>🛩️ 低空AI视觉算法平台</h1>
+    <p>基于深度学习的视觉AI算法服务平台，提供实时视频分析与智能报告生成。</p>
+
+    <h2>📦 算法产品</h2>
+
+    <div class="algo-grid">
+        <a href="parking.html" class="algo-card">
+            <div class="icon">🚗</div>
+            <h3>AI违停检测</h3>
+            <p>实时检测违规停车，自动判定合法/违规，生成证据报告</p>
+            <span class="status status-ready">✅ 可用</span>
+        </a>
+
+        <div class="algo-card" style="opacity: 0.6; cursor: not-allowed;">
+            <div class="icon">🔥</div>
+            <h3>火焰/烟雾检测</h3>
+            <p>消防安全预警，实时识别火焰和烟雾</p>
+            <span class="status status-soon">🚧 即将推出</span>
+        </div>
+
+        <div class="algo-card" style="opacity: 0.6; cursor: not-allowed;">
+            <div class="icon">👥</div>
+            <h3>人群聚集检测</h3>
+            <p>监测异常人群聚集，预防安全事故</p>
+            <span class="status status-soon">🚧 即将推出</span>
+        </div>
+
+        <div class="algo-card" style="opacity: 0.6; cursor: not-allowed;">
+            <div class="icon">�</div>
+            <h3>人员闯入检测</h3>
+            <p>禁区入侵检测，自动识别非法进入</p>
+            <span class="status status-soon">� 即将推出</span>
+        </div>
+    </div>
+
+    <h2>✨ 平台特点</h2>
+    <ul>
+        <li>🔌 <strong>统一API接口</strong> - 所有算法采用统一的 WebSocket 接口</li>
+        <li>📹 <strong>多视频源</strong> - RTSP / HTTP / WebSocket / 本地视频</li>
+        <li>📊 <strong>AI报告</strong> - 自动生成可视化分析报告</li>
+        <li>📱 <strong>跨平台</strong> - Web / 小程序 / App 均可接入</li>
+    </ul>
+
+    <div class="footer">
+        <p><strong>低空AI视觉算法平台</strong><br>联系方式：<strong>18851137913</strong></p>
+    </div>
+
+</body>
+
+</html>
