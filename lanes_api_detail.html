@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API接口文档 - AI违停检测</title>
+    <title>API接口文档 - 消防通道占用检测</title>
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
     <style>
@@ -133,14 +133,14 @@
 <body class="markdown-body">
 
     <div class="breadcrumb">
-        <a href="index.html">平台首页</a> / <a href="parking.html">AI违停检测</a> / API文档
+        <a href="index.html">平台首页</a> / <a href="lanes_api.html">消防通道占用检测</a> / API文档
     </div>
 
     <h1>📖 API 接口文档</h1>
     <p>WebSocket 实时通信接口，支持 Python 后端和前端 JavaScript 两种接入方式。</p>
 
     <h2>🔌 接口地址</h2>
-    <pre><code>ws://服务器IP:8000/ws_roi</code></pre>
+    <pre><code>ws://服务器IP:8000/ws</code></pre>
 
     <h2>📨 消息格式</h2>
 
@@ -183,9 +183,9 @@
         </tr>
         <tr>
             <td>接收</td>
-            <td><code>stopped</code></td>
+            <td><code>started</code> / <code>stopped</code></td>
             <td>JSON</td>
-            <td>已停止</td>
+            <td>状态变更通知</td>
         </tr>
     </table>
 
@@ -213,19 +213,18 @@ import cv2
 import numpy as np
 
 async def main():
-    uri = "ws://127.0.0.1:8000/ws_roi"
+    uri = "ws://127.0.0.1:8000/ws"
     
     async with websockets.connect(uri) as ws:
-        # 1. 停止之前的流 (可选，后端会自动处理，但显式调用更安全)
-        await ws.send(json.dumps({"type": "stop"}))
-        
-        # 2. 启动检测
+        # 1. 启动检测
         await ws.send(json.dumps({
             "type": "start",
-            "source": "rtsp://your-camera/stream" # 或本地文件路径
+            "source": "rtsp://your-camera/stream", # 或本地文件路径
+            "conf_thres": 0.65,
+            "frame_gap": 2
         }))
         
-        # 3. 接收 loop
+        # 2. 接收 loop
         while True:
             try:
                 msg = await ws.recv()
@@ -248,13 +247,15 @@ async def main():
             
             if data.get("type") == "payload":
                 # 处理检测结果
-                print(f"Frame {data['payload']['frame_index']}: {len(data['payload']['tracks'])} objects")
+                lanes = data['payload']['lanes']
+                polluted_count = data['payload']['stats']['occupied_lanes']
+                print(f"Frame {data['frame_idx']}: {polluted_count} lanes polluted")
                 
             elif data.get("type") == "error":
-                print(f"Error: {data.get('message') or data.get('error')}")
+                print(f"Error: {data.get('message')}")
                 break
                 
-            elif data.get("type") == "stop":
+            elif data.get("type") == "stopped":
                 print("Stopped")
                 break
 
@@ -266,12 +267,10 @@ asyncio.run(main())</code></pre>
     <!-- 前端接入 -->
     <div id="tab-frontend" class="tab-content">
         <h3>最小示例（无渲染）</h3>
-        <p>复制以下代码保存为 HTML 文件即可运行，打开浏览器控制台查看输出：</p>
-
         <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;body&gt;
-  &lt;h1&gt;AI违停检测&lt;/h1&gt;
+  &lt;h1&gt;消防通道检测&lt;/h1&gt;
   &lt;img id="video" style="max-width:640px;"&gt;
   &lt;div&gt;
       &lt;button id="start"&gt;Start&lt;/button&gt;
@@ -279,24 +278,27 @@ asyncio.run(main())</code></pre>
   &lt;/div&gt;
 
   &lt;script&gt;
-    const ws = new WebSocket('ws://127.0.0.1:8000/ws_roi');
+    const ws = new WebSocket('ws://127.0.0.1:8000/ws');
     const img = document.getElementById('video');
     
     ws.onmessage = (e) =&gt; {
-      // 1. 处理二进制视频帧 (Blob)
       if (e.data instanceof Blob) {
         img.src = URL.createObjectURL(e.data);
       } else {
-        // 2. 处理 JSON 数据消息
         const data = JSON.parse(e.data);
-        if (data.type === 'payload') console.log('检测结果:', data.payload);
-        else if (data.type === 'error') console.error('错误:', data.message);
+        if (data.type === 'payload') {
+            const stats = data.payload.stats;
+            console.log(`Polluted Lanes: ${stats.occupied_lanes}/${stats.total_lanes}`);
+        }
       }
     };
     
     document.getElementById('start').onclick = () =&gt; {
-      // 发送启动指令 (支持 RTSP 或 文件路径)
-      ws.send(JSON.stringify({ type: 'start', source: 'rtsp://...' }));
+      ws.send(JSON.stringify({ 
+          type: 'start', 
+          source: 'rtsp://...',
+          frame_gap: 5
+      }));
     };
     
     document.getElementById('stop').onclick = () =&gt; {
@@ -305,9 +307,6 @@ asyncio.run(main())</code></pre>
   &lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
-        <div class="tip">
-            💡 <strong>提示：</strong> 如需带 UI 渲染的完整示例，请查看 <a href="demo_minimal.html">在线演示</a>
-        </div>
     </div>
 
     <h2>📤 发送消息</h2>
@@ -315,7 +314,9 @@ asyncio.run(main())</code></pre>
     <h3>启动检测</h3>
     <pre><code>{
   "type": "start",
-  "source": "rtsp://user:pass@192.168.1.100:554/stream"
+  "source": "rtsp://user:pass@192.168.1.100:554/stream",
+  "conf_thres": 0.65,  // 置信度阈值
+  "frame_gap": 5       // 跳帧间隔
 }</code></pre>
 
     <table>
@@ -335,7 +336,19 @@ asyncio.run(main())</code></pre>
             <td><code>source</code></td>
             <td>string</td>
             <td>✅</td>
-            <td>视频源地址（RTSP/HTTP/本地路径）</td>
+            <td>视频源地址（RTSP/RTMP/HTTP/本地路径）</td>
+        </tr>
+        <tr>
+            <td><code>conf_thres</code></td>
+            <td>float</td>
+            <td>❌</td>
+            <td>默认 0.65</td>
+        </tr>
+        <tr>
+            <td><code>frame_gap</code></td>
+            <td>int</td>
+            <td>❌</td>
+            <td>默认 5</td>
         </tr>
     </table>
 
@@ -344,115 +357,47 @@ asyncio.run(main())</code></pre>
 
     <h2>📥 接收消息</h2>
 
-    <h3>检测结果</h3>
+    <h3>检测结果 (Payload)</h3>
     <pre><code>{
   "type": "payload",
+  "ts": 1712345678.123,
   "payload": {
-    "frame_index": 1234,
-    "tracks": {
-      "1": {
-        "track_id": 1,
-        "class_name": "小汽车",
-        "bbox": [100, 200, 300, 400],
-        "status": "违规停车"
+    "frame_idx": 100,
+    "timestamp": 4.0,
+    "lanes": [
+      {
+        "lane_id": "main_lane",
+        "status": "污染",       // "污染" 或 "正常"
+        "polluted": true,      // true 或 false
+        "confidence": 0.95,
+        "occupants": [         // 侵占物列表
+            {
+                "cls_name": "car",
+                "bbox": [100, 100, 200, 200]
+            }
+        ]
       }
+    ],
+    "stats": {
+        "total_lanes": 1,
+        "occupied_lanes": 1,
+        "total_occupants": 1
     }
   }
 }</code></pre>
 
-    <table>
-        <tr>
-            <th>字段</th>
-            <th>说明</th>
-        </tr>
-        <tr>
-            <td><code>frame_index</code></td>
-            <td>当前帧序号</td>
-        </tr>
-        <tr>
-            <td><code>tracks</code></td>
-            <td>车辆追踪信息（key 为车辆ID）</td>
-        </tr>
-        <tr>
-            <td><code>track_id</code></td>
-            <td>车辆追踪ID</td>
-        </tr>
-        <tr>
-            <td><code>class_name</code></td>
-            <td>车辆类型（小汽车/面包车/卡车）</td>
-        </tr>
-        <tr>
-            <td><code>bbox</code></td>
-            <td>边界框 [x1, y1, x2, y2]</td>
-        </tr>
-        <tr>
-            <td><code>status</code></td>
-            <td>状态（移动/停车/合法停车/违规停车）</td>
-        </tr>
-    </table>
+    <h2>📊 异常事件抓拍</h2>
 
-    <h2>📊 AI 视觉分析</h2>
+    <p>当检测到通道被占用时，系统自动在 <code>result/abnormal_captures/</code> 目录下生成事件文件夹：</p>
 
-    <p>当检测到违规停车事件后，系统自动生成完整的证据报告，保存在 <code>result/</code> 目录：</p>
-
-    <pre><code>result/
-└── 20260126_005935_punish_id880/
-    ├── id880_frame107_full.jpg      # 全景截图
-    ├── id880_frame107_crop.jpg      # 目标裁剪图
-    ├── id880_frame107_annotated.jpg # 带标注截图
-    ├── id880_frame107.csv           # 结构化数据
-    ├── report.html                  # 可视化报告
-    └── summary.json                 # AI 分析摘要</code></pre>
-
-    <h3>summary.json 格式</h3>
-    <pre><code>{
-  "verdict": "REVIEW",           // 判定: ILLEGAL(违规) / LEGAL(合法) / REVIEW(待复核)
-  "confidence": 0.85,            // 置信度 0-1
-  "car_id": 880,                 // 车辆追踪ID
-  "parked_frames": 45,           // 停车帧数
-  "evidence_level": "HIGH",      // 证据等级: HIGH/MEDIUM/LOW
-  "summary": "车辆停于道路右侧...", // AI 分析总结
-  "evidence": {                  // 证据图片分析
-    "img1": ["分析描述1", "分析描述2"],
-    "img2": ["分析描述1"]
-  },
-  "missing_evidence": [...],     // 缺失证据
-  "next_actions": [...]          // 建议后续操作
-}</code></pre>
-
-    <table>
-        <tr>
-            <th>字段</th>
-            <th>说明</th>
-        </tr>
-        <tr>
-            <td><code>verdict</code></td>
-            <td>判定结论（ILLEGAL/LEGAL/REVIEW）</td>
-        </tr>
-        <tr>
-            <td><code>confidence</code></td>
-            <td>置信度评分 0-1</td>
-        </tr>
-        <tr>
-            <td><code>summary</code></td>
-            <td>AI 生成的文字总结说明</td>
-        </tr>
-        <tr>
-            <td><code>evidence</code></td>
-            <td>对各截图的逐条分析</td>
-        </tr>
-        <tr>
-            <td><code>missing_evidence</code></td>
-            <td>缺失的关键证据</td>
-        </tr>
-        <tr>
-            <td><code>next_actions</code></td>
-            <td>建议的后续操作</td>
-        </tr>
-    </table>
+    <pre><code>result/abnormal_captures/
+└── event_12_34_150/           // 命名格式: event_{timestamp}_{frame_idx}
+    ├── raw.jpg                // 原始视频帧
+    ├── vis.jpg                // 带标注的可视化帧
+    └── result.csv             // 该时刻的违规数据（Scene ID, BBox, Time...）</code></pre>
 
     <div class="footer">
-        <p><a href="parking.html">← 返回产品页</a></p>
+        <p><a href="lanes_api.html">← 返回产品页</a></p>
     </div>
 
     <script>
