@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API接口文档 - 交通拥挤识别</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+            margin-top: 32px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #d1d9e0;
+            margin: 24px 0 0 0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #656d76;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn.active {
+            color: #0969da;
+            border-bottom-color: #fd8c73;
+        }
+
+        .tab-btn:hover {
+            color: #0969da;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 24px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        pre {
+            background: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        code {
+            background: rgba(175, 184, 193, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 85%;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        .tip {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            background: #ddf4ff;
+            border-left: 4px solid #0969da;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <div class="breadcrumb">
+        <a href="../../index.html">平台首页</a> / <a href="index.html">交通拥挤识别</a> / API文档
+    </div>
+
+    <h1>📖 API 接口文档</h1>
+    <p>WebSocket 实时通信接口，支持 Python 后端和前端 JavaScript 两种接入方式。</p>
+
+    <h2>🔌 接口地址</h2>
+    <pre><code>ws://服务器IP:8000/ws</code></pre>
+
+    <h2>📨 消息格式</h2>
+
+    <table>
+        <tr>
+            <th>方向</th>
+            <th>消息类型</th>
+            <th>格式</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>start</code></td>
+            <td>JSON</td>
+            <td>启动检测</td>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>stop</code></td>
+            <td>JSON</td>
+            <td>停止检测</td>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>status</code></td>
+            <td>JSON</td>
+            <td>查询状态</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>response</code></td>
+            <td>JSON</td>
+            <td>指令响应</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>frame</code></td>
+            <td>JSON</td>
+            <td>检测结果 + 标注图（base64）</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>error</code></td>
+            <td>JSON</td>
+            <td>错误信息</td>
+        </tr>
+    </table>
+
+    <div class="tip">
+        📷 <strong>图像说明：</strong> <code>frame</code> 消息中的 <code>image</code> 字段为 JPEG 的 base64 字符串。
+    </div>
+
+    <h2>🚀 接入示例</h2>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('python')">🐍 Python 接入</button>
+        <button class="tab-btn" onclick="switchTab('frontend')">🌐 前端接入</button>
+    </div>
+
+    <div id="tab-python" class="tab-content active">
+        <h3>安装依赖</h3>
+        <pre><code>pip install websockets opencv-python numpy</code></pre>
+
+        <h3>完整示例</h3>
+        <pre><code>import asyncio
+import websockets
+import json
+import base64
+import cv2
+import numpy as np
+
+async def main():
+    uri = "ws://127.0.0.1:8000/ws"
+
+    async with websockets.connect(uri) as ws:
+        await ws.send(json.dumps({"action": "start", "source": "rtsp://your-camera/stream"}))
+
+        while True:
+            msg = await ws.recv()
+            data = json.loads(msg)
+
+            if data.get("type") == "frame":
+                payload = data.get("payload", {})
+                print("payload:", payload)
+
+                img_b64 = data.get("image")
+                if img_b64:
+                    img_bytes = base64.b64decode(img_b64)
+                    frame = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+                    if frame is not None:
+                        cv2.imshow("congestion", frame)
+                        if cv2.waitKey(1) & 0xFF == ord("q"):
+                            break
+
+            elif data.get("type") == "response":
+                print("response:", data)
+
+            elif data.get("type") == "error":
+                print("error:", data)
+                break
+
+    cv2.destroyAllWindows()
+
+asyncio.run(main())</code></pre>
+    </div>
+
+    <div id="tab-frontend" class="tab-content">
+        <h3>最小示例（无渲染）</h3>
+        <p>复制以下代码保存为 HTML 文件即可运行，打开浏览器控制台查看输出：</p>
+
+        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;交通拥挤识别&lt;/h1&gt;
+  &lt;img id="preview" style="max-width:640px;"&gt;
+  &lt;div&gt;
+    &lt;button id="start"&gt;Start&lt;/button&gt;
+    &lt;button id="stop"&gt;Stop&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    const ws = new WebSocket('ws://127.0.0.1:8000/ws');
+    const img = document.getElementById('preview');
+
+    ws.onmessage = (e) =&gt; {
+      const data = JSON.parse(e.data);
+      if (data.type === 'frame') {
+        if (data.image) {
+          img.src = 'data:image/jpeg;base64,' + data.image;
+        }
+        console.log('payload:', data.payload);
+      } else if (data.type === 'response') {
+        console.log('response:', data);
+      } else if (data.type === 'error') {
+        console.error('error:', data.message || data);
+      }
+    };
+
+    document.getElementById('start').onclick = () =&gt; {
+      ws.send(JSON.stringify({ action: 'start', source: 'rtsp://...' }));
+    };
+
+    document.getElementById('stop').onclick = () =&gt; {
+      ws.send(JSON.stringify({ action: 'stop' }));
+    };
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+    </div>
+
+    <h2>📤 发送消息</h2>
+
+    <h3>启动检测</h3>
+    <pre><code>{
+  "action": "start",
+  "source": "rtsp://user:pass@192.168.1.100:554/stream"
+}</code></pre>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>必填</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>action</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>固定值 <code>"start"</code></td>
+        </tr>
+        <tr>
+            <td><code>source</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>视频源地址（RTSP/HTTP/本地路径）</td>
+        </tr>
+    </table>
+
+    <h3>停止检测</h3>
+    <pre><code>{
+  "action": "stop"
+}</code></pre>
+
+    <h3>查询状态</h3>
+    <pre><code>{
+  "action": "status"
+}</code></pre>
+
+    <h2>📥 接收消息</h2>
+
+    <h3>指令响应</h3>
+    <pre><code>{
+  "type": "response",
+  "action": "start",
+  "success": true,
+  "source": "rtsp://...",
+  "device": "cuda"
+}</code></pre>
+
+    <h3>检测结果帧</h3>
+    <pre><code>{
+  "type": "frame",
+  "payload": {
+    "frame": 120,
+    "congested": true,
+    "total_vehicles": 8,
+    "stopped_vehicles": 6,
+    "zones": [
+      {
+        "id": 1,
+        "vehicles": 4,
+        "severity": "mild",
+        "center": [320, 180],
+        "vehicle_ids": [3, 7, 9, 11]
+      }
+    ]
+  },
+  "image": "base64..."
+}</code></pre>
+
+    <h3>Payload 字段说明</h3>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>frame</code></td>
+            <td>int</td>
+            <td>帧编号</td>
+        </tr>
+        <tr>
+            <td><code>congested</code></td>
+            <td>bool</td>
+            <td>是否拥堵</td>
+        </tr>
+        <tr>
+            <td><code>total_vehicles</code></td>
+            <td>int</td>
+            <td>车辆总数（仅拥堵时返回）</td>
+        </tr>
+        <tr>
+            <td><code>stopped_vehicles</code></td>
+            <td>int</td>
+            <td>静止车辆数（仅拥堵时返回）</td>
+        </tr>
+        <tr>
+            <td><code>zones</code></td>
+            <td>array</td>
+            <td>拥堵区列表（仅拥堵时返回）</td>
+        </tr>
+    </table>
+
+    <h3>拥堵区字段说明</h3>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>id</code></td>
+            <td>int</td>
+            <td>拥堵区 ID</td>
+        </tr>
+        <tr>
+            <td><code>vehicles</code></td>
+            <td>int</td>
+            <td>该区域内车辆数</td>
+        </tr>
+        <tr>
+            <td><code>severity</code></td>
+            <td>string</td>
+            <td>拥堵等级（mild/moderate/severe）</td>
+        </tr>
+        <tr>
+            <td><code>center</code></td>
+            <td>array</td>
+            <td>区域中心点坐标</td>
+        </tr>
+        <tr>
+            <td><code>vehicle_ids</code></td>
+            <td>array</td>
+            <td>区域内车辆 ID 列表</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p><a href="index.html">← 返回交通拥挤识别</a></p>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`[onclick=\"switchTab('${tab}')\"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI违停检测 - 最小示例</title>
+</head>
+
+<body>
+    <h1>AI违停检测</h1>
+    <p>按 <code>F12</code> (Windows) 或 <code>Cmd+Option+I</code> (Mac) 打开控制台查看检测结果</p>
+    <button id="start">启动</button>
+    <button id="stop">停止</button>
+    <br><br>
+    <img id="video" style="max-width:640px;">
+
+    <script>
+        // 建立连接：拉开通信的“闸门”
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws');
+        const img = document.getElementById('video');
+        let stopResolver = null;
+
+        ws.onopen = function () {
+            console.log('✅ 已连接');
+        };
+
+        // 【收】核心监听器：只要服务器往前端“推”数据，这个函数就会被自动触发
+        // 参数 e：即 MessageEvent 消息对象，它是服务器发过来的“信封”
+        ws.onmessage = async function (e) {
+
+            // e.data：信封里的“信件内容”，可能是二进制图，也可能是 JSON 字符串
+
+            // 模式 A：如果收到的是二进制数据 (Blob)，说明服务器推过来的是视频帧
+            if (e.data instanceof Blob) {
+                img.src = URL.createObjectURL(e.data); // 把二进制图转为 URL 显示出来
+                return;
+            }
+
+            // 模式 B：如果收到的是字符串，通过 JSON 解析读取具体字段
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'payload') {
+                const payload = data.payload || data.data || {};
+                // 实时打印服务器推过来的“算法结果”
+                console.log('📊 [收] 服务器推送结果 (Payload):', JSON.stringify(payload, null, 2));
+                const tracks = payload.tracks || {};
+                for (const [id, info] of Object.entries(tracks)) {
+                    const areaName = info.parking_area?.area_name || '未命中停车区域';
+                    console.log('🚗 车辆 ' + id + ': ' + (info.status || '停车') + ' | 区域: ' + areaName);
+                }
+            } else if (data.type === 'frame') {
+                // console.log('📹 视频帧时间戳: ' + data.ts);
+            } else if (data.type === 'error') {
+                console.error('❌ 错误:', data.error);
+            } else if (data.type === 'stopped') {
+                console.log('⏹️ 检测已停止');
+                // 如果有在等待 stop 的 Promise，则触发 resolve
+                if (stopResolver) {
+                    stopResolver();
+                    stopResolver = null;
+                }
+            } else if (data.type === 'started') {
+                console.log('🚀 检测已启动: ' + (data.algorithm || 'unknown'));
+            }
+        };
+
+        // 启动按钮逻辑
+        document.getElementById('start').onclick = async function () {
+            console.log('⏳ 正在重置检测流...');
+
+            // 【发】主动给服务器推指令：要求停止
+            ws.send(JSON.stringify({ type: 'stop' }));
+
+            // 等待停止确认
+            await new Promise(function (resolve) {
+                stopResolver = resolve;
+                setTimeout(function () {
+                    if (stopResolver) {
+                        console.warn('⚠️ 停止响应超时');
+                        stopResolver = null;
+                        resolve();
+                    }
+                }, 2000);
+            });
+
+            // 【发】主动给服务器推指令：要求启动检测
+            // 此时服务器接到命令，就会开始源源不断地用 onmessage 里的逻辑给你推数据
+            ws.send(JSON.stringify({
+                type: 'start',
+                source: '/Volumes/John/yolov8-visdrone/aiparking125Beta2RoiAiRepot/source/车辆违停.mp4'
+            }));
+            console.log('▶️ [发] 已发送启动命令');
+        };
+
+        document.getElementById('stop').onclick = function () {
+            // 【发】推指令
+            ws.send(JSON.stringify({ type: 'stop' }));
+        };
+    </script>
+</body>
+
+</html>

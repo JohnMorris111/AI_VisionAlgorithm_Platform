@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交通拥挤识别 - 低空AI视觉算法平台</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+            margin-top: 32px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        .demo-video {
+            background: #000;
+            border-radius: 8px;
+            padding: 0;
+            text-align: center;
+            margin: 24px 0;
+            overflow: hidden;
+        }
+
+        .demo-video .placeholder {
+            background: #1a1a2e;
+            color: #656d76;
+            padding: 60px;
+        }
+
+        .demo-video .placeholder .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .feature-item {
+            background: #f6f8fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .feature-item .icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-item .label {
+            font-size: 12px;
+            color: #656d76;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <div class="breadcrumb">
+        <a href="../../index.html">← 返回平台首页</a>
+    </div>
+
+    <h1>🚦 交通拥挤识别</h1>
+    <p>实时检测道路车辆拥挤与停车聚集，支持告警、事件留存与 AI 复查报告。</p>
+
+    <h2>📺 功能演示</h2>
+
+    <div class="demo-video">
+        <div class="placeholder">
+            <div class="icon">🎬</div>
+            <p>演示视频</p>
+            <p style="font-size: 12px;">（部署时替换为实际视频文件）</p>
+        </div>
+    </div>
+
+    <h2>✨ 功能特点</h2>
+    <ul>
+        <li>🔌 <strong>实时推送</strong> - WebSocket 实时输出检测结果与标注图</li>
+        <li>🚗 <strong>停车聚类</strong> - 基于车辆静止与空间距离进行聚类判断</li>
+        <li>🧠 <strong>拥堵判定</strong> - 结合车辆数量、拥堵区数量与停车比例</li>
+        <li>📸 <strong>事件留存</strong> - 自动保存原图、标注图与 CSV 数据</li>
+        <li>📊 <strong>AI 复查报告</strong> - 可选生成 JSON / Word 报告</li>
+        <li>📹 <strong>多源接入</strong> - 支持视频流与本地文件</li>
+    </ul>
+
+    <h2>📸 事件留存</h2>
+    <p>检测到拥堵事件时，系统自动在 <code>result/event/frame_*</code> 下保存证据：</p>
+
+    <div class="feature-grid">
+        <div class="feature-item">
+            <div class="icon">🖼️</div>
+            <div class="label">original.jpg (原图)</div>
+        </div>
+        <div class="feature-item">
+            <div class="icon">🖍️</div>
+            <div class="label">annotated.jpg (标注图)</div>
+        </div>
+        <div class="feature-item">
+            <div class="icon">📋</div>
+            <div class="label">payload.csv (数据)</div>
+        </div>
+    </div>
+
+    <h2>📊 AI 复查报告</h2>
+    <p>验证脚本可将事件按时间窗口聚合并生成报告：</p>
+    <ul>
+        <li>📄 <strong>JSON 报告</strong> - 每个事件簇独立输出</li>
+        <li>📝 <strong>Word 报告</strong> - 含原图、标注图与判定结论</li>
+        <li>📦 <strong>汇总文件</strong> - 便于前端/平台汇总展示</li>
+    </ul>
+
+    <h2>🔗 接入文档</h2>
+
+    <table>
+        <tr>
+            <th>文档</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><a href="api.html">📖 API 接口文档</a></td>
+            <td>Python / 前端 接入示例与协议说明</td>
+        </tr>
+    </table>
+
+    <h2>🚀 快速接入</h2>
+
+    <pre><code>// 1. WebSocket 连接
+ws://服务器IP:8000/ws
+
+// 2. 启动检测
+{"action": "start", "source": "rtsp://..."}
+
+// 3. 接收结果
+{"type": "frame", "payload": {"frame": 123, "congested": true}, "image": "base64"}
+
+// 4. 查询状态
+{"action": "status"}
+
+// 5. 停止
+{"action": "stop"}</code></pre>
+
+    <div class="footer">
+        <p><a href="../../index.html">← 返回平台首页</a></p>
+    </div>
+
+</body>
+
+</html>

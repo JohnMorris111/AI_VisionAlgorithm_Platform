@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API接口文档 - 消防通道占用检测</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+            margin-top: 32px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #d1d9e0;
+            margin: 24px 0 0 0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #656d76;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn.active {
+            color: #0969da;
+            border-bottom-color: #fd8c73;
+        }
+
+        .tab-btn:hover {
+            color: #0969da;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 24px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        pre {
+            background: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        code {
+            background: rgba(175, 184, 193, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 85%;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        .tip {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            background: #ddf4ff;
+            border-left: 4px solid #0969da;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <div class="breadcrumb">
+        <a href="../../index.html">平台首页</a> / <a href="index.html">消防通道占用检测</a> / API文档
+    </div>
+
+    <h1>📖 API 接口文档</h1>
+    <p>WebSocket 实时通信接口，支持 Python 后端和前端 JavaScript 两种接入方式。</p>
+
+    <h2>🔌 接口地址</h2>
+    <pre><code>ws://服务器IP:8000/ws</code></pre>
+
+    <h2>📨 消息格式</h2>
+
+    <table>
+        <tr>
+            <th>方向</th>
+            <th>消息类型</th>
+            <th>格式</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>start</code></td>
+            <td>JSON</td>
+            <td>启动检测</td>
+        </tr>
+        <tr>
+            <td>发送</td>
+            <td><code>stop</code></td>
+            <td>JSON</td>
+            <td>停止检测</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>payload</code></td>
+            <td>JSON</td>
+            <td>检测结果数据</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>frame</code></td>
+            <td>JSON + 二进制</td>
+            <td>带标注的视频帧（JPEG）</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>error</code></td>
+            <td>JSON</td>
+            <td>错误信息</td>
+        </tr>
+        <tr>
+            <td>接收</td>
+            <td><code>started</code> / <code>stopped</code></td>
+            <td>JSON</td>
+            <td>状态变更通知</td>
+        </tr>
+    </table>
+
+    <div class="tip">
+        📹 <strong>视频帧说明：</strong> <code>frame</code> 消息后紧跟一条<strong>二进制消息</strong>，内容为 JPEG 格式的标注帧图片。
+    </div>
+
+    <h2>🚀 接入示例</h2>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('python')">🐍 Python 接入</button>
+        <button class="tab-btn" onclick="switchTab('frontend')">🌐 前端接入</button>
+    </div>
+
+    <!-- Python 接入 -->
+    <div id="tab-python" class="tab-content active">
+        <h3>安装依赖</h3>
+        <pre><code>pip install websockets opencv-python numpy</code></pre>
+
+        <h3>完整示例</h3>
+        <pre><code>import asyncio
+import websockets
+import json
+import cv2
+import numpy as np
+
+async def main():
+    uri = "ws://127.0.0.1:8000/ws"
+    
+    async with websockets.connect(uri) as ws:
+        # 1. 启动检测
+        await ws.send(json.dumps({
+            "type": "start",
+            "source": "rtsp://your-camera/stream", # 或本地文件路径
+            "conf_thres": 0.65,
+            "frame_gap": 2
+        }))
+        
+        # 2. 接收 loop
+        while True:
+            try:
+                msg = await ws.recv()
+            except websockets.exceptions.ConnectionClosed:
+                break
+            
+            # 二进制消息 = 视频帧 (JPEG)
+            if isinstance(msg, bytes):
+                frame = cv2.imdecode(np.frombuffer(msg, np.uint8), cv2.IMREAD_COLOR)
+                if frame is not None:
+                    cv2.imshow("Preview", frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'): break
+                continue
+            
+            # JSON 消息
+            try:
+                data = json.loads(msg)
+            except json.JSONDecodeError:
+                continue
+            
+            if data.get("type") == "payload":
+                # 处理检测结果
+                lanes = data['payload']['lanes']
+                polluted_count = data['payload']['stats']['occupied_lanes']
+                print(f"Frame {data['frame_idx']}: {polluted_count} lanes polluted")
+                
+            elif data.get("type") == "error":
+                print(f"Error: {data.get('message')}")
+                break
+                
+            elif data.get("type") == "stopped":
+                print("Stopped")
+                break
+
+    cv2.destroyAllWindows()
+
+asyncio.run(main())</code></pre>
+    </div>
+
+    <!-- 前端接入 -->
+    <div id="tab-frontend" class="tab-content">
+        <h3>最小示例（无渲染）</h3>
+        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;消防通道检测&lt;/h1&gt;
+  &lt;img id="video" style="max-width:640px;"&gt;
+  &lt;div&gt;
+      &lt;button id="start"&gt;Start&lt;/button&gt;
+      &lt;button id="stop"&gt;Stop&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    const ws = new WebSocket('ws://127.0.0.1:8000/ws');
+    const img = document.getElementById('video');
+    
+    ws.onmessage = (e) =&gt; {
+      if (e.data instanceof Blob) {
+        img.src = URL.createObjectURL(e.data);
+      } else {
+        const data = JSON.parse(e.data);
+        if (data.type === 'payload') {
+            const stats = data.payload.stats;
+            console.log(`Polluted Lanes: ${stats.occupied_lanes}/${stats.total_lanes}`);
+        }
+      }
+    };
+    
+    document.getElementById('start').onclick = () =&gt; {
+      ws.send(JSON.stringify({ 
+          type: 'start', 
+          source: 'rtsp://...',
+          frame_gap: 5
+      }));
+    };
+    
+    document.getElementById('stop').onclick = () =&gt; {
+      ws.send(JSON.stringify({ type: 'stop' }));
+    };
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+    </div>
+
+    <h2>📤 发送消息</h2>
+
+    <h3>启动检测</h3>
+    <pre><code>{
+  "type": "start",
+  "source": "rtsp://user:pass@192.168.1.100:554/stream",
+  "conf_thres": 0.65,  // 置信度阈值
+  "frame_gap": 5       // 跳帧间隔
+}</code></pre>
+
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>必填</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><code>type</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>固定值 <code>"start"</code></td>
+        </tr>
+        <tr>
+            <td><code>source</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>视频源地址（RTSP/RTMP/HTTP/本地路径）</td>
+        </tr>
+        <tr>
+            <td><code>conf_thres</code></td>
+            <td>float</td>
+            <td>❌</td>
+            <td>默认 0.65</td>
+        </tr>
+        <tr>
+            <td><code>frame_gap</code></td>
+            <td>int</td>
+            <td>❌</td>
+            <td>默认 5</td>
+        </tr>
+    </table>
+
+    <h3>停止检测</h3>
+    <pre><code>{"type": "stop"}</code></pre>
+
+    <h2>📥 接收消息</h2>
+
+    <h3>检测结果 (Payload)</h3>
+    <pre><code>{
+  "type": "payload",
+  "ts": 1712345678.123,
+  "payload": {
+    "frame_idx": 100,
+    "timestamp": 4.0,
+    "lanes": [
+      {
+        "lane_id": "main_lane",
+        "status": "污染",       // "污染" 或 "正常"
+        "polluted": true,      // true 或 false
+        "confidence": 0.95,
+        "occupants": [         // 侵占物列表
+            {
+                "cls_name": "car",
+                "bbox": [100, 100, 200, 200]
+            }
+        ]
+      }
+    ],
+    "stats": {
+        "total_lanes": 1,
+        "occupied_lanes": 1,
+        "total_occupants": 1
+    }
+  }
+}</code></pre>
+
+    <h2>📊 异常事件抓拍</h2>
+
+    <p>当检测到通道被占用时，系统自动在 <code>result/abnormal_captures/</code> 目录下生成事件文件夹：</p>
+
+    <pre><code>result/abnormal_captures/
+└── event_12_34_150/           // 命名格式: event_{timestamp}_{frame_idx}
+    ├── raw.jpg                // 原始视频帧
+    ├── vis.jpg                // 带标注的可视化帧
+    └── result.csv             // 该时刻的违规数据（Scene ID, BBox, Time...）</code></pre>
+
+    <div class="footer">
+        <p><a href="index.html">← 返回产品页</a></p>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>

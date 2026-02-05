@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI违停检测 - 低空AI视觉算法平台</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 45px;
+            background: #fff;
+        }
+
+        .markdown-body h1 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid #d1d9e0;
+            padding-bottom: 0.3em;
+            margin-top: 32px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        .demo-video {
+            background: #000;
+            border-radius: 8px;
+            padding: 0;
+            text-align: center;
+            margin: 24px 0;
+            overflow: hidden;
+        }
+
+        .demo-video video {
+            width: 100%;
+            display: block;
+        }
+
+        .demo-video .placeholder {
+            background: #1a1a2e;
+            color: #656d76;
+            padding: 60px;
+        }
+
+        .demo-video .placeholder .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .feature-item {
+            background: #f6f8fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .feature-item .icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-item .label {
+            font-size: 12px;
+            color: #656d76;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #d1d9e0;
+            color: #656d76;
+            font-size: 14px;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <div class="breadcrumb">
+        <a href="../../index.html">← 返回平台首页</a>
+    </div>
+
+    <h1>🚗 AI违停检测</h1>
+    <p>实时视频流违规停车检测，自动判定合法/违规，生成证据报告。</p>
+
+    <h2>📺 功能演示</h2>
+
+    <div class="demo-video">
+        <!-- 替换为实际演示视频 -->
+        <div class="placeholder">
+            <div class="icon">🎬</div>
+            <p>演示视频</p>
+            <p style="font-size: 12px;">（部署时替换为实际视频文件）</p>
+        </div>
+        <!-- 有视频时使用：
+  <video controls autoplay muted loop>
+    <source src="demo.mp4" type="video/mp4">
+  </video>
+  -->
+    </div>
+
+    <h2>✨ 功能特点</h2>
+    <ul>
+        <li>🔌 <strong>实时检测</strong> - 毫秒级检测结果推送</li>
+        <li>📹 <strong>多视频源</strong> - RTSP 摄像头 / HTTP 流 / 本地视频</li>
+        <li>🎯 <strong>智能识别</strong> - 自动识别小汽车、面包车、卡车</li>
+        <li>⚖️ <strong>合法/违规判定</strong> - 智能判断停车是否合规</li>
+        <li>📸 <strong>自动截图</strong> - 违规事件自动截图留存</li>
+        <li>📊 <strong>AI报告生成</strong> - 自动生成结构化违规报告</li>
+    </ul>
+
+    <h2>📸 自动截图</h2>
+    <p>检测到违规停车时，系统自动保存证据：</p>
+
+    <div class="feature-grid">
+        <div class="feature-item">
+            <div class="icon">🖼️</div>
+            <div class="label">全景截图</div>
+        </div>
+        <div class="feature-item">
+            <div class="icon">🔍</div>
+            <div class="label">目标裁剪图</div>
+        </div>
+        <div class="feature-item">
+            <div class="icon">📐</div>
+            <div class="label">标注图</div>
+        </div>
+    </div>
+
+    <h2>📊 AI视觉报告</h2>
+    <p>每个违规事件自动生成完整报告：</p>
+    <ul>
+        <li>📋 <strong>CSV 数据表</strong> - 时间、位置、车辆ID、停车时长</li>
+        <li>📄 <strong>HTML 报告</strong> - 可视化展示违规详情</li>
+        <li>📦 <strong>JSON 摘要</strong> - 便于系统集成的标准格式</li>
+    </ul>
+
+    <h2>🔗 接入文档</h2>
+
+    <table>
+        <tr>
+            <th>文档</th>
+            <th>说明</th>
+        </tr>
+        <tr>
+            <td><a href="api.html">📖 API接口文档</a></td>
+            <td>Python / 前端 接入示例</td>
+        </tr>
+        <tr>
+            <td><a href="demo.html">🎮 在线演示</a></td>
+            <td>带 UI 渲染的完整示例</td>
+        </tr>
+    </table>
+
+    <h2>🚀 快速接入</h2>
+
+    <pre><code>// 1. 连接
+WebSocket: ws://服务器IP:8000/ws_roi
+
+// 2. 启动检测
+{"type": "start", "source": "rtsp://摄像头地址/stream"}
+
+// 3. 接收结果
+{"type": "payload", "payload": {"tracks": {...}, "areas": {...}}}
+
+// 4. 停止
+{"type": "stop"}</code></pre>
+
+    <div class="footer">
+        <p><a href="../../index.html">← 返回平台首页</a></p>
+    </div>
+
+</body>
+
+</html>
